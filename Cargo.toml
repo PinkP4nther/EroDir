@@ -1,0 +1,16 @@
+[package]
+name = "erodir"
+version = "0.1.0"
+authors = ["PinkP4nther <pinkp4nther@protonmail.com>"]
+
+[lib]
+name = "erodirlib"
+path = "src/erodirlib.rs"
+
+[[bin]]
+name = "erodir"
+path = "src/erodir.rs"
+
+[dependencies]
+reqwest = "0.9.5"
+clap = "2.32.0"
