@@ -410,17 +410,23 @@ fn thread_gen(hci: &HttpClientInfo, thread_count: u32,erodir_obj: &Arc<Mutex<Tar
     
     let h = erodir_obj.lock().unwrap();
     if h.wf_flag {
-        let mut file = OpenOptions::new()
+        let mut file = match OpenOptions::new()
             .append(true)
             .create(true)
-            .open(&h.wfile_name)
-            .unwrap();
+            .open(&h.wfile_name) {
+                Ok(f) => f,
+                Err(e) => {
+                    println!("[!] Could not create file: {}",e);
+                    process::exit(1);
+                }
+            };
     
         for l in &h.wlines {
             if let Err(e) = writeln!(file,"{}",l) {
                 eprintln!("Couldn't write to file: {}",e);
             }
         }
+        println!("[+] Wrote output file!");
     }
 }// End of thread_gen
 
