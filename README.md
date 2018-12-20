@@ -23,3 +23,6 @@ Open CMD:
 > cargo build --release
 > target\release\erodir --help
 ```
+## Demo
+
+![gif](https://imgur.com/a/IqNaTnf)
