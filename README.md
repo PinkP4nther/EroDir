@@ -25,4 +25,4 @@ Open CMD:
 ```
 ## Demo
 
-![gif](https://imgur.com/a/IqNaTnf)
+![gif](https://imgur.com/a/IqNaTnf.gif)
