@@ -134,9 +134,11 @@ fn main() {
         Some(t) => match String::from(t).parse::<u32>() {
             Ok(i) => {
                 if i >= 1 {
-                    println!("[!] --threads must have more than 0 threads!");
-                    return;
-                    } else {i}},
+                        i
+                    } else {
+                        println!("[!] --threads must have more than 0 threads!");
+                        return;
+                    }},
             Err(_) => {
                 println!("[!] --threads must be a number!"); return;
             }
