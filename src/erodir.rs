@@ -132,7 +132,11 @@ fn main() {
 
     let threads = match args.value_of("threads") {
         Some(t) => match String::from(t).parse::<u32>() {
-            Ok(i) => i,
+            Ok(i) => {
+                if i >= 1 {
+                    println!("[!] --threads must have more than 0 threads!");
+                    return;
+                    } else {i}},
             Err(_) => {
                 println!("[!] --threads must be a number!"); return;
             }
@@ -154,8 +158,6 @@ fn main() {
             None => "None"
         });
     }
-
-
 
     // Create TargetBustInfo object
     let mut erodir_obj = TargetBustInfo::new();
