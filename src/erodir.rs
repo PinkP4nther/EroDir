@@ -12,7 +12,7 @@ use std::io::{Write,BufRead,BufReader};
 use std::time::{Duration,Instant};
 use std::process;
 
-const VERSION: &str = "1.0";
+const VERSION: &str = "1.1";
 
 fn main() {
 
