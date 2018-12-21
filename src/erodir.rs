@@ -8,7 +8,7 @@ use clap::{App, Arg};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::fs::{File,OpenOptions};
-use std::io::{BufRead,BufReader,prelude::*};
+use std::io::{Write,BufRead,BufReader};
 use std::time::{Duration,Instant};
 use std::process;
 
@@ -448,8 +448,10 @@ fn request_engine(robj: &Arc<Mutex<TargetBustInfo>>, http_cli: &Client, fhc: &Ve
 
         // Get next entry 
         let e = match entry.entry_lines.pop() {
-            Some(e) => e,
-            None => String::from("")
+            Some(e) => {
+                if e == "" {continue;} else {e}
+                },
+            None => continue
         };
 
         let mut full_url = entry.url.clone();
@@ -488,7 +490,7 @@ fn make_req(url: &String, http_cli: &Client, mr: u32, fhc: &Vec<u16>, lines: &mu
                 if fhc.contains(&r.status().as_u16()) {
                     println!("  => {} (Status: {})",url,r.status().as_str());
                     if *wff {
-                        lines.push(format!("  => {} (Status: {})",url,r.status().as_str()));
+                        lines.push(format!("[{}] [{}]",r.status().as_str(),url));
                     }
                 }
                 break;
