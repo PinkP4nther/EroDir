@@ -34,16 +34,8 @@ impl TargetBustInfo {
         self.url = url.clone();
     }
 
-    pub fn get_url(self) -> String {
-        self.url.clone()
-    }
-
     pub fn set_thread_count(&mut self, tc: u32) {
         self.thread_count = tc;
-    }
-
-    pub fn get_thread_count(self) -> u32 {
-        self.thread_count
     }
 
     pub fn set_entryl(&mut self, el: &Vec<String>) {
@@ -88,10 +80,6 @@ impl HttpClientInfo {
         }
     }
 
-    pub fn set_web_client(&mut self, cli: Client) {
-        self.web_client = cli;
-    }
-
     pub fn set_crp(&mut self, crp: RedirectPolicy) {
         self.custom_redirect_policy = crp;
     }
@@ -104,9 +92,6 @@ impl HttpClientInfo {
         self.proxy_flag = pf;
     }
 
-    pub fn set_user_agent(&mut self, ua: &HeaderMap) {
-        self.web_headers = ua.clone();
-    }
 }
 
 pub struct ThreadBuildHandle {
