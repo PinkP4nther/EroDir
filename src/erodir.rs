@@ -468,9 +468,11 @@ fn request_engine(robj: &Arc<Mutex<TargetBustInfo>>, http_cli: &Client, fhc: &Ve
             make_req(&full_url, &http_cli, mr, &fhc, &mut lines, &wf_f);
 
             for ext in ex.iter() {
-                let mut full_ext_url = full_url.clone();
-                full_ext_url.push_str(ext.as_str());
-                make_req(&full_ext_url, &http_cli, mr, &fhc, &mut lines, &wf_f);
+                if ext == "" {continue;} else {
+                    let mut full_ext_url = full_url.clone();
+                    full_ext_url.push_str(ext.as_str());
+                    make_req(&full_ext_url, &http_cli, mr, &fhc, &mut lines, &wf_f);
+                }
             }
         } else {
             drop(entry);
