@@ -13,7 +13,7 @@ use std::io::{Write,BufRead,BufReader};
 use std::time::{Duration,Instant};
 use std::process;
 
-const VERSION: &str = "1.2";
+const VERSION: &str = "1.3";
 
 fn main() {
 
@@ -100,6 +100,11 @@ fn main() {
             .value_name("outfile")
             .help("Output results to file")
             .takes_value(true))
+        .arg(Arg::with_name("dirmode")
+            .short("d")
+            .long("dirmode")
+            .help("Enables directory mode (Attempts a try with a / instead of a blank)")
+            .takes_value(false))
         .get_matches();
 
     let mut url = match args.value_of("url") {
@@ -199,6 +204,11 @@ fn main() {
                 p},
             None => "None"
         });
+    }
+
+    if args.is_present("dirmode") {
+        println!("[+] DirMode: \t\t[Active]");
+        erodir_obj.dir_mode = true;
     }
 
     if args.is_present("timeout") {
@@ -435,9 +445,10 @@ fn thread_gen(hci: &HttpClientInfo, thread_count: u32,erodir_obj: &Arc<Mutex<Tar
 
 fn request_engine(robj: &Arc<Mutex<TargetBustInfo>>, http_cli: &Client, fhc: &Vec<u16>) {
     let mut lines: Vec<String> = Vec::new();
-    let wflock = robj.lock().unwrap();
-    let wf_f = wflock.wf_flag;
-    drop(wflock);
+    let tmpl = robj.lock().unwrap();
+    let wf_f = tmpl.wf_flag;
+    let dirmode_f = tmpl.dir_mode;
+    drop(tmpl);
     
     loop {
         // Get Mutex handle
@@ -465,7 +476,13 @@ fn request_engine(robj: &Arc<Mutex<TargetBustInfo>>, http_cli: &Client, fhc: &Ve
         if entry.ext_flag {
             let ex = entry.extension_lines.clone();
             drop(entry);
-            make_req(&full_url, &http_cli, mr, &fhc, &mut lines, &wf_f);
+            if dirmode_f {
+                let mut durl = full_url.clone();
+                durl.push_str("/");
+                make_req(&durl, &http_cli, mr, &fhc, &mut lines, &wf_f);
+            } else {
+                make_req(&full_url, &http_cli, mr, &fhc, &mut lines, &wf_f);
+            }
 
             for ext in ex.iter() {
                 if ext == "" {continue;} else {
@@ -476,7 +493,13 @@ fn request_engine(robj: &Arc<Mutex<TargetBustInfo>>, http_cli: &Client, fhc: &Ve
             }
         } else {
             drop(entry);
-            make_req(&full_url, &http_cli, mr, &fhc, &mut lines, &wf_f);
+            if dirmode_f {
+                let mut durl = full_url.clone();
+                durl.push_str("/");
+                make_req(&durl, &http_cli, mr, &fhc, &mut lines, &wf_f);
+            } else {
+                make_req(&full_url, &http_cli, mr, &fhc, &mut lines, &wf_f);
+            }
         }
     }
     let mut tbi_handle = robj.lock().unwrap();

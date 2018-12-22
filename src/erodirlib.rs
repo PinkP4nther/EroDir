@@ -13,6 +13,7 @@ pub struct TargetBustInfo {
     pub wlines: Vec<String>,
     pub wfile_name: String,
     pub wf_flag: bool,
+    pub dir_mode: bool,
 }
 
 impl TargetBustInfo {
@@ -27,6 +28,7 @@ impl TargetBustInfo {
             wlines: Vec::new(),
             wfile_name: String::new(),
             wf_flag: false,
+            dir_mode: false,
         }
     }
 
