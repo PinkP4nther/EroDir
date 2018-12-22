@@ -1,6 +1,7 @@
 extern crate reqwest;
 extern crate clap;
 extern crate erodirlib;
+extern crate serde_derive;
 
 use reqwest::{Url, UrlError, Client, RedirectPolicy, Proxy, header::{self,HeaderMap,HeaderValue}};
 use erodirlib::{TargetBustInfo,HttpClientInfo,ThreadBuildHandle};
@@ -12,7 +13,7 @@ use std::io::{Write,BufRead,BufReader};
 use std::time::{Duration,Instant};
 use std::process;
 
-const VERSION: &str = "1.1";
+const VERSION: &str = "1.2";
 
 fn main() {
 
@@ -182,8 +183,7 @@ fn main() {
         }); // End of println! and match args.value_of
     }
 
-    // Create HTTP object before creating client
-        // Create HTTP Info object
+    // Create HTTP Info object
     let mut http_cli_obj = HttpClientInfo::new();
     http_cli_obj.set_crp(RedirectPolicy::none());
     
@@ -283,7 +283,6 @@ fn main() {
     }
 
     http_cli_obj.web_headers = headers;
-
 
     println!("[+] Threads: \t\t[{}]",threads);
     println!("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
@@ -512,14 +511,20 @@ fn make_req(url: &String, http_cli: &Client, mr: u32, fhc: &Vec<u16>, lines: &mu
 }// End of make_req
 
 fn req_error(e: reqwest::Error) {
+
     if e.is_http() {
         match e.url() {
             Some(url) => {
                 println!("[!] Could not make request to: {}",url);
+                match e.get_ref() {
+                    None => {},
+                    Some(err) => println!("[!] ERROR: {}",err)
+                }
                 process::exit(1);
             },
             None => println!("No URL specified"),
         }
+
     } else if e.is_server_error() {
         match e.url() {
             Some(url) => println!("[!] Server error at {}",url),

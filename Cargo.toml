@@ -1,6 +1,6 @@
 [package]
 name = "erodir"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["PinkP4nther <pinkp4nther@protonmail.com>"]
 
 [lib]
@@ -14,3 +14,4 @@ path = "src/erodir.rs"
 [dependencies]
 reqwest = "0.9.5"
 clap = "2.32.0"
+serde_derive = "1.0.82"
