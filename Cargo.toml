@@ -1,6 +1,6 @@
 [package]
 name = "erodir"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["PinkP4nther <pinkp4nther@protonmail.com>"]
 
 [lib]
