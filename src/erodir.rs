@@ -6,10 +6,10 @@ extern crate serde_derive;
 use reqwest::{Url, UrlError, Client, RedirectPolicy, Proxy, header::{self,HeaderMap,HeaderValue}};
 use erodirlib::{TargetBustInfo,HttpClientInfo,ThreadBuildHandle};
 use clap::{App, Arg};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::fs::{File,OpenOptions};
-use std::io::{Write,BufRead,BufReader};
+use std::io::{stdout,Write,BufRead,BufReader};
 use std::time::{Duration,Instant};
 use std::process;
 
@@ -306,6 +306,13 @@ fn main() {
     // Build HTTP client
     http_cli_obj.web_client = build_http_client(&http_cli_obj);
 
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        stat_verb(rx);
+        process::exit(1);
+    });
+
     // Check if there is extension list
     if args.is_present("extensionlist") {
         let xfile = match args.value_of("extensionlist") {
@@ -315,14 +322,40 @@ fn main() {
         erodir_obj.set_extension_lines(&read_lines(&read_file(&xfile)));
         erodir_obj.set_ext_flag(true);
         println!("[*] Bruteforcing {} entries!",(entrylines.len() * erodir_obj.extension_lines.len()) + entrylines.len());
-        thread_gen(&http_cli_obj, threads,&Arc::new(Mutex::new(erodir_obj)));
+        thread_gen(&http_cli_obj, threads,&Arc::new(Mutex::new(erodir_obj)),tx);
     } else {
         println!("[*] Bruteforcing {} entries!",entrylines.len());
-        thread_gen(&http_cli_obj, threads,&Arc::new(Mutex::new(erodir_obj)));
+        thread_gen(&http_cli_obj, threads,&Arc::new(Mutex::new(erodir_obj)),tx);
     }
 
     println!("[+] Finished!");
 }// End of main
+
+fn stat_verb(rx: mpsc::Receiver<u16>) {
+
+    let mut p_flag: u32 = 0;
+    let syms = vec!["-","\\","|","/"];
+    let mut i: usize = 3;
+
+    loop {
+        match rx.recv() {
+            Ok(_) => {
+            if p_flag == 100 {
+                print!(" [{}]\r",syms[i]);
+                match stdout().flush() {
+                    Ok(_) => {},
+                    Err(_) => {return;}
+                }
+                if i == 3 {i = 0;} else {
+                    i = i + 1;}
+                p_flag = 1;
+            } else {
+                p_flag = p_flag + 1;
+            }},
+            Err(_) => {return;}
+        }
+    }
+}// End of stat_verb
 
 fn build_http_client(hci: &HttpClientInfo) -> Client {
     if hci.proxy_flag {
@@ -376,13 +409,14 @@ fn read_lines(f: &File) -> Vec<String> {
     v
 }// End of read_lines
 
-fn thread_gen(hci: &HttpClientInfo, thread_count: u32,erodir_obj: &Arc<Mutex<TargetBustInfo>>) {
+fn thread_gen(hci: &HttpClientInfo, thread_count: u32,erodir_obj: &Arc<Mutex<TargetBustInfo>>, tx: mpsc::Sender<u16>) {
     // Set handle vector and start timer
     let mut build_handles: Vec<ThreadBuildHandle> = Vec::new();
     let mut t_handles: Vec<thread::JoinHandle<()>> = Vec::new();
 
     // Initialize threads
     for _ in 0..thread_count {
+
 
         let mut bh = ThreadBuildHandle::new();
         // Clone Http Client from HttpClientInfo
@@ -403,12 +437,15 @@ fn thread_gen(hci: &HttpClientInfo, thread_count: u32,erodir_obj: &Arc<Mutex<Tar
 
     println!("[*] Threads Built: {}",build_handles.len());
     println!("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+");
+
     let now = Instant::now();
 
     //Spawn threads
     for th in build_handles {
+        let tx = mpsc::Sender::clone(&tx);
+
         t_handles.push(thread::spawn(move || {
-            request_engine(&th.robj, &th.cloned_http_cli, &th.fhc);
+            request_engine(&th.robj, &th.cloned_http_cli, &th.fhc, tx);
         }));
     }
 
@@ -443,7 +480,7 @@ fn thread_gen(hci: &HttpClientInfo, thread_count: u32,erodir_obj: &Arc<Mutex<Tar
     }
 }// End of thread_gen
 
-fn request_engine(robj: &Arc<Mutex<TargetBustInfo>>, http_cli: &Client, fhc: &Vec<u16>) {
+fn request_engine(robj: &Arc<Mutex<TargetBustInfo>>, http_cli: &Client, fhc: &Vec<u16>, tx: mpsc::Sender<u16>) {
     let mut lines: Vec<String> = Vec::new();
     let tmpl = robj.lock().unwrap();
     let wf_f = tmpl.wf_flag;
@@ -480,8 +517,11 @@ fn request_engine(robj: &Arc<Mutex<TargetBustInfo>>, http_cli: &Client, fhc: &Ve
                 let mut durl = full_url.clone();
                 durl.push_str("/");
                 make_req(&durl, &http_cli, mr, &fhc, &mut lines, &wf_f);
+                tx.send(1).unwrap();
             } else {
                 make_req(&full_url, &http_cli, mr, &fhc, &mut lines, &wf_f);
+                tx.send(1).unwrap();
+
             }
 
             for ext in ex.iter() {
@@ -489,6 +529,7 @@ fn request_engine(robj: &Arc<Mutex<TargetBustInfo>>, http_cli: &Client, fhc: &Ve
                     let mut full_ext_url = full_url.clone();
                     full_ext_url.push_str(ext.as_str());
                     make_req(&full_ext_url, &http_cli, mr, &fhc, &mut lines, &wf_f);
+                    tx.send(1).unwrap();
                 }
             }
         } else {
@@ -497,11 +538,14 @@ fn request_engine(robj: &Arc<Mutex<TargetBustInfo>>, http_cli: &Client, fhc: &Ve
                 let mut durl = full_url.clone();
                 durl.push_str("/");
                 make_req(&durl, &http_cli, mr, &fhc, &mut lines, &wf_f);
+                tx.send(1).unwrap();
             } else {
                 make_req(&full_url, &http_cli, mr, &fhc, &mut lines, &wf_f);
+                tx.send(1).unwrap();
             }
         }
     }
+
     let mut tbi_handle = robj.lock().unwrap();
     for l in lines {
         tbi_handle.wlines.push(l);
