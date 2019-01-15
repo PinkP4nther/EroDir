@@ -13,7 +13,7 @@ use std::io::{stdout,Write,BufRead,BufReader};
 use std::time::{Duration,Instant};
 use std::process;
 
-const VERSION: &str = "1.4";
+const VERSION: &str = "1.5";
 
 fn main() {
 
@@ -395,16 +395,25 @@ fn read_file(file_name: &String) -> File {
     }
 }// End of read_file
 
+/* Convert Latin-1 to UTF-8 and return String object -
+fn latin1_to_string(s: &[u8]) -> String {
+    s.iter().map(|&c| c as char).collect()
+}*/
+
 fn read_lines(f: &File) -> Vec<String> {
     let mut v: Vec<String> = Vec::new();
+    let mut c: u32 = 1;
     for line in BufReader::new(f).lines() {
         v.insert(0, match line {
             Ok(l) => l,
-            Err(_) => {
-                println!("[!] Failed to read line of file");
-                process::exit(1);
+            Err(e) => {
+                /*
+                println!("ERROR: {}",e,);*/
+                println!("[!] Failed to read line {} of file! Reason: [{}]",c,e);
+                continue;
             }
         });
+        c = c + 1;
     }
     v
 }// End of read_lines
