@@ -395,11 +395,6 @@ fn read_file(file_name: &String) -> File {
     }
 }// End of read_file
 
-/* Convert Latin-1 to UTF-8 and return String object -
-fn latin1_to_string(s: &[u8]) -> String {
-    s.iter().map(|&c| c as char).collect()
-}*/
-
 fn read_lines(f: &File) -> Vec<String> {
     let mut v: Vec<String> = Vec::new();
     let mut c: u32 = 1;
