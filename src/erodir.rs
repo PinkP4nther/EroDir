@@ -13,7 +13,7 @@ use std::io::{stdout,Write,BufRead,BufReader};
 use std::time::{Duration,Instant};
 use std::process;
 
-const VERSION: &str = "1.5";
+const VERSION: &str = "1.6";
 
 fn main() {
 
@@ -405,6 +405,8 @@ fn read_lines(f: &File) -> Vec<String> {
                 /*
                 println!("ERROR: {}",e,);*/
                 println!("[!] Failed to read line {} of file! Reason: [{}]",c,e);
+                println!("[!] Try converting all files to UTF-8.");
+                println!("[!] Skipping line!");
                 continue;
             }
         });
