@@ -103,7 +103,7 @@ fn main() {
         .arg(Arg::with_name("dirmode")
             .short("d")
             .long("dirmode")
-            .help("Enables directory mode (Attempts a request with a an appended '/' instead of a blank)")
+            .help("Enables directory mode (Attempts a request with an appended '/' instead of a blank)")
             .takes_value(false))
         .get_matches();
 
