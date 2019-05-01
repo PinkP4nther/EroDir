@@ -529,12 +529,12 @@ fn write_xml_file(wf_name: &String, lines: &Vec<String>,url: &String) {
         let sections: Vec<&str> = l.split(",").collect();
         for section in sections {
             if i == 0 {
-                if let Err(e) = writeln!(file,"<code>{}</code>",section) {
+                if let Err(e) = writeln!(file,"<url>{}</url>",section) {
                     eprintln!("Couldn't write to file: {}",e);
                 }
             }
             else if i == 1 {
-                if let Err(e) = writeln!(file,"<url>{}</url>",section) {
+                if let Err(e) = writeln!(file,"<code>{}</code>",section) {
                     eprintln!("Couldn't write to file: {}",e);
                 }
             }
@@ -630,7 +630,7 @@ fn make_req(url: &String, http_cli: &Client, mr: u32, fhc: &Vec<u16>, lines: &mu
                     /* Filter body size here */
                     println!("  => {} (Status: {})",url,r.status().as_str());
                     if *wff != 0 {
-                        lines.push(format!("[{}],[{}]",r.status().as_str(),url));
+                        lines.push(format!("[{}],[{}]",url,r.status().as_str()));
                     }
                 }
                 break;
