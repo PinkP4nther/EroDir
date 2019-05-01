@@ -12,7 +12,7 @@ pub struct TargetBustInfo {
     pub max_retries: u32,
     pub wlines: Vec<String>,
     pub wfile_name: String,
-    pub wf_flag: bool,
+    pub wf_flag: i8,
     pub dir_mode: bool,
 }
 
@@ -27,7 +27,7 @@ impl TargetBustInfo {
             max_retries: 3,
             wlines: Vec::new(),
             wfile_name: String::new(),
-            wf_flag: false,
+            wf_flag: 0,
             dir_mode: false,
         }
     }

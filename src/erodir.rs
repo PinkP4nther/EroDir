@@ -13,7 +13,7 @@ use std::io::{stdout,Write,BufRead,BufReader};
 use std::time::{Duration,Instant};
 use std::process;
 
-const VERSION: &str = "1.6";
+const VERSION: &str = "1.7";
 
 fn main() {
 
@@ -286,10 +286,16 @@ fn main() {
         println!("[+] OutFile: \t\t[{}]", match args.value_of("output") {
             Some(of) => {
                 erodir_obj.wfile_name = of.to_string();
-                erodir_obj.wf_flag = true;
+                if erodir_obj.wfile_name.as_str().ends_with(".xml") {
+                    erodir_obj.wf_flag = 2; // Maybe makes this an enum with the types of files
+                } else {
+                    erodir_obj.wf_flag = 1;
+                }
                 of},
             None => "None"
         });
+    } else {
+        erodir_obj.wf_flag = 0;
     }
 
     http_cli_obj.web_headers = headers;
@@ -328,7 +334,6 @@ fn main() {
         thread_gen(&http_cli_obj, threads,&Arc::new(Mutex::new(erodir_obj)),tx);
     }
 
-    println!("[+] Finished!");
 }// End of main
 
 fn stat_verb(rx: mpsc::Receiver<u16>) {
@@ -415,6 +420,27 @@ fn read_lines(f: &File) -> Vec<String> {
     v
 }// End of read_lines
 
+fn write_erodir_file(wf_name: &String, lines: &Vec<String>)
+{
+    let mut file = match OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(wf_name) {
+            Ok(f) => f,
+            Err(e) => {
+                println!("[!] Could not create file: {}",e);
+                process::exit(1);
+            }
+        };
+    
+    for l in lines {
+        if let Err(e) = writeln!(file,"{}",l) {
+            eprintln!("Couldn't write to file: {}",e);
+        }
+    }
+    println!("[+] Wrote output file!");
+}// End of write_erodir_file
+
 fn thread_gen(hci: &HttpClientInfo, thread_count: u32,erodir_obj: &Arc<Mutex<TargetBustInfo>>, tx: mpsc::Sender<u16>) {
     // Set handle vector and start timer
     let mut build_handles: Vec<ThreadBuildHandle> = Vec::new();
@@ -465,26 +491,61 @@ fn thread_gen(hci: &HttpClientInfo, thread_count: u32,erodir_obj: &Arc<Mutex<Tar
 
     
     let h = erodir_obj.lock().unwrap();
-    if h.wf_flag {
-        let mut file = match OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open(&h.wfile_name) {
-                Ok(f) => f,
-                Err(e) => {
-                    println!("[!] Could not create file: {}",e);
-                    process::exit(1);
-                }
-            };
-    
-        for l in &h.wlines {
-            if let Err(e) = writeln!(file,"{}",l) {
-                eprintln!("Couldn't write to file: {}",e);
-            }
-        }
-        println!("[+] Wrote output file!");
+
+    if h.wf_flag == 0 {
+    } else if h.wf_flag == 1 {
+        write_erodir_file(&h.wfile_name,&h.wlines);
+    } else if h.wf_flag == 2 {
+        write_xml_file(&h.wfile_name, &h.wlines,&h.url);
     }
+    println!("[+] Finished!");
 }// End of thread_gen
+
+fn write_xml_file(wf_name: &String, lines: &Vec<String>,url: &String) {
+    let mut file = match OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(wf_name) {
+            Ok(f) => f,
+            Err(e) => {
+                println!("[!] Could not create file: {}",e);
+                process::exit(1);
+            }
+        };
+    if let Err(e) = writeln!(file,"<?xml version=\"1.0\" encoding=\"UTF-8\"?>") {
+        eprintln!("Couldn't write to file: {}",e);
+    }
+    if let Err(e) = writeln!(file,"<erodir_scan>") {
+        eprintln!("Couldn't write to file: {}",e);
+    }
+    if let Err(e) = writeln!(file,"<target>{}</target>",url) {
+        eprintln!("Couldn't write to file: {}",e);
+    }
+
+
+    for l in lines {
+        /* Format line and format XML */
+        let mut i = 0;
+        let sections: Vec<&str> = l.split(",").collect();
+        for section in sections {
+            if i == 0 {
+                if let Err(e) = writeln!(file,"<code>{}</code>",section) {
+                    eprintln!("Couldn't write to file: {}",e);
+                }
+            }
+            else if i == 1 {
+                if let Err(e) = writeln!(file,"<url>{}</url>",section) {
+                    eprintln!("Couldn't write to file: {}",e);
+                }
+            }
+            i += 1;
+        }
+    }
+    if let Err(e) = writeln!(file,"</erodir_scan>") {
+        eprintln!("Couldn't write to file: {}",e);
+    }
+    println!("[+] Wrote output file!");
+}
 
 fn request_engine(robj: &Arc<Mutex<TargetBustInfo>>, http_cli: &Client, fhc: &Vec<u16>, tx: mpsc::Sender<u16>) {
     let mut lines: Vec<String> = Vec::new();
@@ -558,7 +619,7 @@ fn request_engine(robj: &Arc<Mutex<TargetBustInfo>>, http_cli: &Client, fhc: &Ve
     }
 }// End of request_engine
 
-fn make_req(url: &String, http_cli: &Client, mr: u32, fhc: &Vec<u16>, lines: &mut Vec<String>, wff: &bool) {
+fn make_req(url: &String, http_cli: &Client, mr: u32, fhc: &Vec<u16>, lines: &mut Vec<String>, wff: &i8) {
 
     let mut retry_counter = 0;
 
@@ -566,9 +627,10 @@ fn make_req(url: &String, http_cli: &Client, mr: u32, fhc: &Vec<u16>, lines: &mu
         match http_cli.get(url.as_str()).send() {
             Ok(r) => {
                 if fhc.contains(&r.status().as_u16()) {
+                    /* Filter body size here */
                     println!("  => {} (Status: {})",url,r.status().as_str());
-                    if *wff {
-                        lines.push(format!("[{}] [{}]",r.status().as_str(),url));
+                    if *wff != 0 {
+                        lines.push(format!("[{}],[{}]",r.status().as_str(),url));
                     }
                 }
                 break;
