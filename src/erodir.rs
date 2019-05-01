@@ -98,7 +98,7 @@ fn main() {
             .short("o")
             .long("output")
             .value_name("outfile")
-            .help("Output results to file")
+            .help("Output results to file (Extensions are autodetected Ex. output.xml)")
             .takes_value(true))
         .arg(Arg::with_name("dirmode")
             .short("d")
