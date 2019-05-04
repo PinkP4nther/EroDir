@@ -6,7 +6,7 @@ A fast web directory/file enumeration tool written in Rust
 
 ### Debian/Ubuntu
 ``` sh
-$ apt -y update && apt install libssl-dev
+$ apt -y update && apt install libssl-dev pkg-config
 $ curl https://sh.rustup.rs -sSf | sh
 $ source ~/.profile
 $ git clone https://github.com/PinkP4nther/EroDir
