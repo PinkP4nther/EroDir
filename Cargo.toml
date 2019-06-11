@@ -12,6 +12,6 @@ name = "erodir"
 path = "src/erodir.rs"
 
 [dependencies]
-reqwest = "0.9.16"
+reqwest = "0.9.18"
 clap = "2.33.0"
-serde_derive = "1.0.90"
+serde_derive = "1.0.92"
