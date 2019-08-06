@@ -53,12 +53,14 @@ fn main() {
             .value_name("http(s)://proxy:port")
             .help("HTTP proxy to run traffic through")
             .takes_value(true))
+        // Add proxy authentication headers / arguments
         .arg(Arg::with_name("useragent")
             .short("U")
             .long("useragent")
             .value_name(format!("EroDir/{}",VERSION).as_str())
             .help("Change the default user agent")
             .takes_value(true))
+        // Add Basic auth header / arguments
         .arg(Arg::with_name("vhost")
             .short("v")
             .long("vhost")
