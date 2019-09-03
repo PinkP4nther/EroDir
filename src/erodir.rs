@@ -1,11 +1,13 @@
-extern crate reqwest;
+extern crate base64;
 extern crate clap;
 extern crate erodirlib;
+extern crate reqwest;
 extern crate serde_derive;
 
-use reqwest::{Url, UrlError, Client, RedirectPolicy, Proxy, header::{self,HeaderMap,HeaderValue}};
+use base64::encode;
 use erodirlib::{TargetBustInfo,HttpClientInfo,ThreadBuildHandle};
 use clap::{App, Arg};
+use reqwest::{Url, UrlError, Client, RedirectPolicy, Proxy, header::{self,HeaderMap,HeaderValue}};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
 use std::fs::{File,OpenOptions};
@@ -61,6 +63,11 @@ fn main() {
             .help("Change the default user agent")
             .takes_value(true))
         // Add Basic auth header / arguments
+        .arg(Arg::with_name("basic-auth")
+            .short("b")
+            .long("bauth")
+            .value_name("admin:pass")
+            .takes_value(true))
         .arg(Arg::with_name("vhost")
             .short("v")
             .long("vhost")
@@ -196,9 +203,10 @@ fn main() {
     
     // Check if proxy enabled
     if args.is_present("proxy") {
-        println!("[+] Proxy: \t[{}]", match args.value_of("proxy") {
+        println!("[+] Proxy: \t\t[{}]", match args.value_of("proxy") {
             Some(p) => {
                 http_cli_obj.set_proxy_flag(true);
+                // if prox auth true do stuff here
                 http_cli_obj.set_web_proxy(match Proxy::all(p) {
                     Ok(t) => t,
                     Err(t) => {println!("[!] Could not set web proxy: [{}]",t);process::exit(1);}
@@ -252,6 +260,15 @@ fn main() {
             Some(vh) => {
                 headers.insert(header::HOST, HeaderValue::from_str(vh).unwrap());
             vh},
+            None => "None"
+        });
+    }
+
+    if args.is_present("basic-auth") {
+        println!("[+] Authorization: \t[{}]", match args.value_of("basic-auth") {
+            Some(ba) => {
+                headers.insert(header::AUTHORIZATION, HeaderValue::from_str(format!("Basic {}",encode(ba)).as_str()).unwrap());
+            ba},
             None => "None"
         });
     }
