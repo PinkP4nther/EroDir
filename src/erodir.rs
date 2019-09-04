@@ -67,6 +67,7 @@ fn main() {
             .short("b")
             .long("bauth")
             .value_name("admin:pass")
+            .help("Basic auth header")
             .takes_value(true))
         .arg(Arg::with_name("vhost")
             .short("v")
